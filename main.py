@@ -4,45 +4,41 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-HF_TOKEN = os.environ.get("HF_TOKEN")
-MODEL_URL = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-7B-Instruct"
+# Берём ключ из переменных окружения Render
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODEL_NAME = "qwen-2.5-32b-instruct" # Мощная и быстрая бесплатная модель
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json
+    # Получаем текст от Алисы, или "Привет!" если пусто
     user_request = data.get('request', {}).get('original_utterance', 'Привет!')
 
     headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
+        "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json"
     }
     
-    prompt = f"<|im_start|>user\n{user_request}<|im_end|>\n<|im_start|>assistant\n"
-    
     payload = {
-        "inputs": prompt,
-        "parameters": {
-            "max_new_tokens": 256,
-            "temperature": 0.7,
-            "return_full_text": False
-        }
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": "Ты полезный и дружелюбный ассистент. Отвечай кратко, по делу и на русском языке."},
+            {"role": "user", "content": user_request}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 512
     }
     
     try:
-        response = requests.post(MODEL_URL, json=payload, headers=headers)
+        response = requests.post(GROQ_API_URL, json=payload, headers=headers)
         response.raise_for_status()
         result = response.json()
-        
-        if isinstance(result, list) and len(result) > 0:
-            ai_text = result[0].get('generated_text', 'Нет ответа').strip()
-        elif "error" in result:
-            ai_text = f"Модель просыпается: {result.get('error')}. Попробуйте через 30 секунд."
-        else:
-            ai_text = "Неожиданный формат ответа."
-            
+        ai_text = result['choices'][0]['message']['content'].strip()
     except Exception as e:
-        ai_text = f"Ошибка: {str(e)}"
+        ai_text = f"Извините, произошла ошибка связи: {str(e)}"
 
+    # Возвращаем ответ в формате Яндекс Диалогов
     return jsonify({
         "version": data.get("version", "1.0"),
         "session": data.get("session", {}),
