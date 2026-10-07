@@ -64,7 +64,7 @@ def webhook():
     payload = {
         "model": current_model,
         "messages": [
-            {"role": "system", "content": "Ты полезный и дружелюбный ассистент по имени Джарвис. Отвечай кратко, по делу и на русском языке."},
+            {"role": "system", "content": "Ты полезный и дружелюбный ассистент по имени Qwen. Отвечай кратко, по делу и на русском языке."},
             {"role": "user", "content": user_request}
         ],
         "temperature": 0.7,
