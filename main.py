@@ -6,9 +6,10 @@ app = Flask(__name__)
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+MODELS_URL = "https://api.groq.com/openai/v1/models"
 
-# Актуальная, быстрая и бесплатная модель на Groq (замена устаревшим)
-MODEL_NAME = "llama-3.1-8b-instant" 
+# Самая стабильная и доступная модель на Groq на данный момент
+MODEL_NAME = "llama-3.3-70b-versatile" 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -34,7 +35,16 @@ def webhook():
         response = requests.post(GROQ_API_URL, json=payload, headers=headers)
         
         if response.status_code != 200:
-            ai_text = f"Ошибка API (код {response.status_code}): {response.text}"
+            # Если модель не найдена, попробуем запросить список доступных моделей для диагностики
+            if response.status_code == 404:
+                try:
+                    models_resp = requests.get(MODELS_URL, headers=headers)
+                    available_models = [m['id'] for m in models_resp.json().get('data', [])]
+                    ai_text = f"Модель {MODEL_NAME} недоступна. Доступные модели: {', '.join(available_models[:5])}..."
+                except:
+                    ai_text = f"Ошибка API (код {response.status_code}): {response.text}"
+            else:
+                ai_text = f"Ошибка API (код {response.status_code}): {response.text}"
         else:
             result = response.json()
             ai_text = result['choices'][0]['message']['content'].strip()
