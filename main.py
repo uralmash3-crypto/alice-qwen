@@ -6,8 +6,10 @@ app = Flask(__name__)
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-# Актуальное название модели Qwen на Groq
-MODEL_NAME = "qwen/qwen3-32b" 
+
+# Используем гарантированно доступную и быструю модель на Groq
+# Если захотите Qwen, попробуйте позже "qwen-2.5-32b" (без слеша)
+MODEL_NAME = "llama3-8b-8192" 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -22,7 +24,7 @@ def webhook():
     payload = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "system", "content": "Ты полезный и дружелюбный ассистент. Отвечай кратко, по делу и на русском языке."},
+            {"role": "system", "content": "Ты полезный и дружелюбный ассистент по имени Джарвис. Отвечай кратко, по делу и на русском языке."},
             {"role": "user", "content": user_request}
         ],
         "temperature": 0.7,
@@ -32,7 +34,6 @@ def webhook():
     try:
         response = requests.post(GROQ_API_URL, json=payload, headers=headers)
         
-        # Если Groq вернул ошибку, мы покажем её точный текст, чтобы понять причину
         if response.status_code != 200:
             ai_text = f"Ошибка API (код {response.status_code}): {response.text}"
         else:
