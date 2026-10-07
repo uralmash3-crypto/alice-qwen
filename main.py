@@ -4,15 +4,14 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Берём ключ из переменных окружения Render
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-MODEL_NAME = "qwen-2.5-32b-instruct" # Мощная и быстрая бесплатная модель
+# Актуальное название модели Qwen на Groq
+MODEL_NAME = "qwen/qwen3-32b" 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json
-    # Получаем текст от Алисы, или "Привет!" если пусто
     user_request = data.get('request', {}).get('original_utterance', 'Привет!')
 
     headers = {
@@ -32,13 +31,17 @@ def webhook():
     
     try:
         response = requests.post(GROQ_API_URL, json=payload, headers=headers)
-        response.raise_for_status()
-        result = response.json()
-        ai_text = result['choices'][0]['message']['content'].strip()
+        
+        # Если Groq вернул ошибку, мы покажем её точный текст, чтобы понять причину
+        if response.status_code != 200:
+            ai_text = f"Ошибка API (код {response.status_code}): {response.text}"
+        else:
+            result = response.json()
+            ai_text = result['choices'][0]['message']['content'].strip()
+            
     except Exception as e:
         ai_text = f"Извините, произошла ошибка связи: {str(e)}"
 
-    # Возвращаем ответ в формате Яндекс Диалогов
     return jsonify({
         "version": data.get("version", "1.0"),
         "session": data.get("session", {}),
