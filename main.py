@@ -7,9 +7,8 @@ app = Flask(__name__)
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# Используем гарантированно доступную и быструю модель на Groq
-# Если захотите Qwen, попробуйте позже "qwen-2.5-32b" (без слеша)
-MODEL_NAME = "llama3-8b-8192" 
+# Актуальная, быстрая и бесплатная модель на Groq (замена устаревшим)
+MODEL_NAME = "llama-3.1-8b-instant" 
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
